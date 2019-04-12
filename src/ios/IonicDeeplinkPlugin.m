@@ -38,12 +38,41 @@
 - (BOOL)handleLink:(NSURL *)url {
   NSLog(@"IonicDeepLinkPlugin: Handle link (internal) %@", url);
 
+  /* [START] Compatibility with googleplus plugin */
+  if (url != nil) {
+    NSString* possibleReversedClientId = [url.absoluteString componentsSeparatedByString:@":"].firstObject;
+        
+      if ([possibleReversedClientId isEqualToString:self.getreversedClientId]) {
+        NSLog(@"Suppressing Deeplink as will be handled by GooglePlus plugin");
+        return NO;
+      }
+  }
+  /* [END] */
   _lastEvent = [self createResult:url];
 
   [self sendToJs];
 
   return YES;
 }
+
+/* [START] Compatibility with googleplus plugin */
+- (NSString*) getreversedClientId {
+    NSArray* URLTypes = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleURLTypes"];
+    
+    if (URLTypes != nil) {
+        for (NSDictionary* dict in URLTypes) {
+            NSString *urlName = dict[@"CFBundleURLName"];
+            if ([urlName isEqualToString:@"REVERSED_CLIENT_ID"]) {
+                NSArray* URLSchemes = dict[@"CFBundleURLSchemes"];
+                if (URLSchemes != nil) {
+                    return URLSchemes[0];
+                }
+            }
+        }
+    }
+    return nil;
+}
+/* [END] */
 
 - (BOOL)handleContinueUserActivity:(NSUserActivity *)userActivity {
 
